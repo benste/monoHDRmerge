@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "hdrmerge"
+version = "0.1.0"
+description = ""
+authors = ["benste <benstmrs@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+opencv-python = "^4.9.0.80"
+gradio = "^4.19.1"
+pydantic = "^2.6.1"
+
+
+[tool.poetry.group.dev.dependencies]
+jupyterlab = "^4.1.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
