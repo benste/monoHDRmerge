@@ -1,13 +1,13 @@
 import io
-from typing import Optional
 import math
-from typing_extensions import Literal
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Optional
 
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.figure import Figure
 import cv2
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.figure import Figure
+from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import Literal
 
 
 class coords2D(BaseModel):
@@ -278,38 +278,3 @@ def plot_contribution(images: dict, options: mergeOptions) -> np.ndarray:
 
     # Return as np array
     return figure_to_array(f)
-
-
-from load_and_save_images import load_images
-
-plot_contribution(
-    load_images(
-        [
-            "/home/bens/Pictures/scanned negatives/hdrtest/scan_01_-0.5.tif",
-            "/home/bens/Pictures/scanned negatives/hdrtest/scan_01.tif",
-            "/home/bens/Pictures/scanned negatives/hdrtest/scan_01_0.5.tif",
-        ]
-    ),
-    options=mergeOptions(
-        inclusion_boundary_width=0.2,
-        relative_offset=0,
-        horizontal_offset=0,
-        bracketed_exposure_relation="sigmoid",
-        activation_function="normal",
-        # relative_exposure={
-        #     "scan_01_-0.5.tif": 0,
-        # },
-    ),
-)
-
-
-# merged = merge(
-#     load_images(
-#         [
-#             "/home/bens/Pictures/scanned negatives/hdrtest/scan_01_-0.5.tif",
-#             "/home/bens/Pictures/scanned negatives/hdrtest/scan_01.tif",
-#             "/home/bens/Pictures/scanned negatives/hdrtest/scan_01_0.5.tif",
-#         ]
-#     ),
-#     options=mergeOptions(),
-# )
