@@ -1,5 +1,6 @@
-import cv2
 import os
+
+import cv2
 
 
 def load_images(filepaths: list) -> dict:

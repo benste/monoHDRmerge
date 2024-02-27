@@ -1,12 +1,11 @@
-from collections import defaultdict
 import os
+from collections import defaultdict
 
+import gradio as gr
+import load_and_save_images
 import matplotlib.pyplot as plt
 import numpy as np
-import gradio as gr
-
-import load_and_save_images
-from merge_interactive import mergeOptions, plot_contribution, merge, figure_to_array
+from merge_interactive import figure_to_array, merge, mergeOptions, plot_contribution
 
 max_images_raw_images = 256
 
@@ -23,7 +22,7 @@ class gradioDataLink(object):
     defaults = {"relative_exposure": 0}
 
     def __init__(self) -> None:
-        self._data = defaultdict(dict)
+        self._data: dict = defaultdict(dict)
 
         # set defaults
         for key, default in self.defaults.items():
@@ -40,7 +39,7 @@ class gradioDataLink(object):
 data_link = gradioDataLink()
 
 
-def _create_relative_exposure_inputs():
+def _create_relative_exposure_inputs() -> tuple:
     relative_exposure_labels, relative_exposure_values = ([], [])
     with gr.Blocks():
         instructions = gr.Markdown(
@@ -88,7 +87,7 @@ def _create_relative_exposure_inputs():
     )
 
 
-def _show_relative_exposure_options(image_locations: list):
+def _show_relative_exposure_options(image_locations: list) -> list:
     """Update the visibility and label of components that allow to set relative exposure
 
     Args:
@@ -104,27 +103,21 @@ def _show_relative_exposure_options(image_locations: list):
         label_updates.append(gr.update(visible=i < len(filenames), value=labels[i]))
         exposure_updates.append(gr.update(visible=i < len(filenames)))
 
-    return (
-        [gr.update(visible=True), gr.update(visible=True)]
-        + label_updates
-        + exposure_updates
-    )
+    return [gr.update(visible=True), gr.update(visible=True)] + label_updates + exposure_updates
 
 
 def merge_exposures(
     image_locations: list,
-    bracketed_exposure_relation,
-    activation_function,
-    inclusion_boundary_width,
-    horizontal_offset,
-    relative_offset,
-):
+    bracketed_exposure_relation: float,
+    activation_function: str,
+    inclusion_boundary_width: float,
+    horizontal_offset: float,
+    relative_offset: dict,
+) -> list:
     images = load_and_save_images.load_images(image_locations)
-    relative_exposure = {
-        image: data_link.data["relative_exposure"][image] for image in images
-    }
+    relative_exposure = {image: data_link.data["relative_exposure"][image] for image in images}
     options = mergeOptions(
-        **{
+        **{  # type: ignore
             "relative_exposure": relative_exposure,
             "bracketed_exposure_relation": bracketed_exposure_relation,
             "activation_function": activation_function,
@@ -165,9 +158,7 @@ with gr.Blocks() as mergeInterface:
 
     with gr.Row():
         # Once images have been uploaded and exposures defined, interactive merge can start
-        start_interactive_merge_button = gr.Button(
-            "start interactive merging", visible=False
-        )
+        start_interactive_merge_button = gr.Button("start interactive merging", visible=False)
 
     with gr.Row():
         # Options changing how images are merged
@@ -191,9 +182,7 @@ with gr.Blocks() as mergeInterface:
             horizontal_offset = gr.Slider(
                 minimum=-1, maximum=1, value=0, label="midpoint horizontal offset"
             )
-            relative_offset = gr.Slider(
-                minimum=-1, maximum=0.99, value=0, label="midpoint slope"
-            )
+            relative_offset = gr.Slider(minimum=-1, maximum=0.99, value=0, label="midpoint slope")
             do_merge = gr.Button(value="MERGE", size="sm")
         # Here we'll show for each image what they contribute to the merged image
         with gr.Column():

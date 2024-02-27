@@ -1,6 +1,5 @@
 import io
 import math
-from typing import Optional
 
 import cv2
 import matplotlib.pyplot as plt
@@ -23,22 +22,20 @@ class Range(BaseModel):
 
 
 class mergeOptions(BaseModel):
-    relative_exposure: Optional[dict] = None
+    relative_exposure: dict = {}
     inclusion_boundary_width: float = Field(ge=0, le=1, default=0.2)
     relative_offset: float = Field(ge=-1, le=0.99, default=0)
     horizontal_offset: float = Field(ge=-1, le=1, default=0)
     bracketed_exposure_relation: Literal["linear", "sigmoid"] = "linear"
     activation_function: Literal["linear", "normal"] = "normal"
-    exposure_filename_map: dict = None
+    exposure_filename_map: dict = {}
 
 
-def _clean_options(images: dict, options: mergeOptions):
-    # TODO make sure the keys in relative exposure cover the images
-
-    # Figure out relative exposure and neutral exposure if not defined
+def _clean_options(images: dict, options: mergeOptions) -> mergeOptions:
+    # Figure out relative exposures if not defined
     if not options.relative_exposure:
         options.relative_exposure = {
-            name: i - (len(images) - 1) / 2 for i, name in enumerate(images.keys())
+            name: i - (len(images) - 1) / 2 for i, name in enumerate(sorted(images.keys()))
         }
 
     # Check that each exposure is unique
@@ -46,10 +43,12 @@ def _clean_options(images: dict, options: mergeOptions):
     if len(set(exposures)) < len(exposures):
         raise Exception("exposures should be unique")
 
+    # check that the relative exposure cover the images
+    if any(exposure is not images.keys() for exposure in exposures):
+        raise Exception("exposures do not cover all the images")
+
     # This map is used often, so let's define it once
-    options.exposure_filename_map = {
-        value: key for key, value in options.relative_exposure.items()
-    }
+    options.exposure_filename_map = {value: key for key, value in options.relative_exposure.items()}
 
     return options
 
@@ -60,9 +59,7 @@ def _central_points_from_relational_function(
     # Exposures sorted in inverse order; the higher the exposure the lower the
     # pixels values it should contribute
     sorted_exposures = np.sort(list(options.relative_exposure.values()))[::-1]
-    linear_diff = np.array(list(range(len(sorted_exposures)))) / (
-        len(sorted_exposures) - 1
-    )
+    linear_diff = np.array(list(range(len(sorted_exposures)))) / (len(sorted_exposures) - 1)
 
     # Get the central points
     central_points = {}
@@ -73,7 +70,7 @@ def _central_points_from_relational_function(
     return central_points
 
 
-def linear_relation(x_range: Range, options: mergeOptions) -> coords2D:
+def linear_relation(x_range: Range, options: mergeOptions) -> dict:
     """Uses a linear relation between brackets to find the central points for the
     contribution function on the x-axis for each image.
 
@@ -82,7 +79,7 @@ def linear_relation(x_range: Range, options: mergeOptions) -> coords2D:
         options (mergeOptions)
 
     Returns:
-        coords2D: x,y
+        dict: {exposure: center point on the x-axis}
     """
     if len(options.relative_exposure) == 1:
         # Simply take the center of the single image
@@ -104,7 +101,7 @@ def linear_relation(x_range: Range, options: mergeOptions) -> coords2D:
     return _central_points_from_relational_function(x, y, options)
 
 
-def sigmoidal_relation(x_range: Range, options: mergeOptions) -> coords2D:
+def sigmoidal_relation(x_range: Range, options: mergeOptions) -> dict:
     """Uses a sigmoidal relation between brackets to find the central points for the
     contribution function on the x-axis for each image.
 
@@ -113,7 +110,7 @@ def sigmoidal_relation(x_range: Range, options: mergeOptions) -> coords2D:
         options (mergeOptions)
 
     Returns:
-        coords2D: x,y
+        dict: {exposure: center point on the x-axis}
     """
     if len(options.relative_exposure) == 1:
         # Simply take the center of the single image
@@ -142,9 +139,17 @@ def sigmoidal_relation(x_range: Range, options: mergeOptions) -> coords2D:
     return _central_points_from_relational_function(x, y, options)
 
 
-def linear_contribution(
-    center_point: int, x_range: Range, options: mergeOptions
-) -> coords2D:
+def linear_contribution(center_point: int, x_range: Range, options: mergeOptions) -> coords2D:
+    """activation function that goes up and down around the center point linearly
+
+    Args:
+        center_point (int): center of the activation
+        x_range (Range): min and max x can be
+        options (mergeOptions)
+
+    Returns:
+        coords2D: x and y of the activation
+    """
     width = (x_range.max - x_range.min) * options.inclusion_boundary_width
     x = np.array(range(x_range.min, x_range.max + 1))
     y = -abs(((x - center_point) / (width / 2))) + 1
@@ -158,6 +163,16 @@ def linear_contribution(
 def normal_function_contribution(
     center_point: int, x_range: Range, options: mergeOptions
 ) -> coords2D:
+    """Normal distribution activation function is centered around the center point
+
+    Args:
+        center_point (int): center of the activation
+        x_range (Range): min and max x can be
+        options (mergeOptions)
+
+    Returns:
+        coords2D: x and y of the activation
+    """
     width = (x_range.max - x_range.min) * options.inclusion_boundary_width
     x = np.array(range(x_range.min, x_range.max + 1))
     standard_deviation = width / 3
@@ -174,6 +189,17 @@ def normal_function_contribution(
 
 
 def get_weight_by_pixel_value(images: dict, options: mergeOptions) -> dict:
+    """For each image, the weight a pixel-value would contribute to the final image
+
+    value = how white, since this only deals with monochromatic images
+
+    Args:
+        images (dict): {name: np.ndarray}
+        options (mergeOptions)
+
+    Returns:
+        dict: {exposure: pixel value weight}
+    """
     dtype_info = np.iinfo(list(images.values())[0].dtype)
     x_range = Range(min=dtype_info.min, max=dtype_info.max)
 
@@ -199,6 +225,15 @@ def get_weight_by_pixel_value(images: dict, options: mergeOptions) -> dict:
 
 
 def get_image_weight_maps(images: dict, options: mergeOptions) -> dict:
+    """For each image, for each pixel, it's contributing weight
+
+    Args:
+        images (dict): {name: np.ndarray}
+        options (mergeOptions)
+
+    Returns:
+        dict: {image name: weight map}
+    """
     # get the pixel-value -> weight maps
     pixel_value_weight = get_weight_by_pixel_value(images, options)
 
@@ -214,7 +249,16 @@ def get_image_weight_maps(images: dict, options: mergeOptions) -> dict:
     return weight_maps
 
 
-def merge(images: dict, options: mergeOptions):
+def merge(images: dict, options: mergeOptions) -> np.ndarray:
+    """Merge bracketed images into an HDR image
+
+    Args:
+        images (dict): {name: np.ndarray}
+        options (mergeOptions)
+
+    Returns:
+        np.ndarray: Merged image
+    """
     options = _clean_options(images, options)
 
     # Get per image weight maps
@@ -234,6 +278,7 @@ def merge(images: dict, options: mergeOptions):
 
 
 def figure_to_array(figure: Figure) -> np.ndarray:
+    """transform a matplotlib figure to numpy array"""
     with io.BytesIO() as buff:
         figure.savefig(buff, format="raw")
         buff.seek(0)
@@ -243,6 +288,17 @@ def figure_to_array(figure: Figure) -> np.ndarray:
 
 
 def plot_contribution(images: dict, options: mergeOptions) -> np.ndarray:
+    """Plot for each bracketed exposure
+    - The image with each pixel lightened or darkened depending on its contribution
+    - A exposure histrogram with the activation function overlayed
+
+    Args:
+        images (dict): {name: np.ndarray}
+        options (mergeOptions)
+
+    Returns:
+        np.ndarray: matplotlib subplot as numpy array
+    """
     options = _clean_options(images, options)
 
     contribution_by_pixel_value = get_weight_by_pixel_value(images, options)
@@ -259,7 +315,7 @@ def plot_contribution(images: dict, options: mergeOptions) -> np.ndarray:
         weight = weight_maps[filename]
 
         # apply weights to image and resize for faster rendering
-        weighted_image = cv2.resize(
+        weighted_image = cv2.resize(  # type: ignore
             np.round(image * weight),
             dsize=(np.array(image.shape)[::-1] / 4).astype(int),
         )
