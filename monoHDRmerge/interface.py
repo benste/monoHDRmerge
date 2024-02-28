@@ -40,6 +40,16 @@ data_link = gradioDataLink()
 
 
 def _create_relative_exposure_inputs() -> tuple:
+    """These are the components with which to set each image's exposure
+
+    Since we don't know beforehand how may images there are, we make a large
+    number of components that are initially hidden. The values are communicated
+    through a gradioDataLink to avoid a large number of inputs into a function.
+
+    Returns:
+        tuple: (instruction, relative_exposure_labels(list), relative_exposure_values(list))
+    """
+
     relative_exposure_labels, relative_exposure_values = ([], [])
     with gr.Blocks():
         instructions = gr.Markdown(
