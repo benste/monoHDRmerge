@@ -8,12 +8,12 @@ Help()
    echo "Syntax: format [-h]"
    echo "options:"
    echo "h      Print this Help."
-   echo
+   echo "p      setup dependencies through poetry before running the tests"
 }
 
 
-integration_test=false
-while getopts ":hi" option; do
+setup_poetry=false
+while getopts ":hp" option; do
     case $option in
         h) # display Help
             Help
