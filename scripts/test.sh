@@ -35,15 +35,15 @@ fi
 
 # Run tests
 echo "Running Flake8 code linting..."
-poetry run flake8 --config scripts/test_config/.flake8 monoHDRmerge/.
+poetry run flake8 --config scripts/test_config/.flake8 .
 
 echo "Running Black formatting check..."
-poetry run black --check --config scripts/test_config/black.toml monoHDRmerge/.
+poetry run black --check --config scripts/test_config/black.toml .
 
 echo "Running isort import sorting check..."
 poetry run isort **/*.py -c --settings-file scripts/test_config/.isort.cfg
 
 echo "Running static type-checking with Mypy ..."
-poetry run mypy monoHDRmerge/. --config-file scripts/test_config/mypy.ini
+poetry run mypy . --config-file scripts/test_config/mypy.ini
 
 echo "Done!"
