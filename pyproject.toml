@@ -10,6 +10,7 @@ python = "^3.10"
 opencv-python = "^4.9.0.80"
 gradio = "^4.19.1"
 pydantic = "^2.6.1"
+scipy = "^1.12.0"
 
 
 [tool.poetry.group.dev.dependencies]
