@@ -6,9 +6,11 @@ on:
 
 jobs:
   test:
-
-    runs-on: python:3.10.13
-    
+    runs-on: "ubuntu-latest"
     steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
     - run: ./scripts/setup_poetry.sh
     - run: ./scripts/test.sh
