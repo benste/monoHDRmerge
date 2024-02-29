@@ -25,9 +25,16 @@ together with the unmodified images' log histogram.
 
 
 ## Example
-![bracket_-2](example_images/Image_-2.tif)
-![bracket_-1](example_images/Image_-1.tif)
-![bracket_0](example_images/Image_0.tif)
-![bracket_1](example_images/Image_1.tif)
-![bracket_2](example_images/Image_2.tif)
+bracket -2:
+![bracket_-2](example_images/Image_-2.png)
+bracket 1:
+![bracket_-1](example_images/Image_-1.png)
+bracket 0:
+![bracket_0](example_images/Image_0.png)
+bracket 1:
+![bracket_1](example_images/Image_1.png)
+bracket 2:
+![bracket_2](example_images/Image_2.png)
+
+Merged HDR image:
 ![mergedHDR](example_images/merged.png)
