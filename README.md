@@ -25,6 +25,10 @@ together with the unmodified images' log histogram.
 
 
 ## Example
+The final image will look flat, this is intended. 
+This image can now be adjusted with your favorit image editor to create a more
+pleasing image while retaining detail captured from each bracketed image.
+
 bracket -2:
 ![bracket_-2](example_images/Image_-2.png)
 bracket 1:
