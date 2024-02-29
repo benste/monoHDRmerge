@@ -182,17 +182,17 @@ with gr.Blocks() as mergeInterface:
                 )
                 activation_function = gr.Dropdown(
                     choices=["linear", "normal", "subbotin"],
-                    value="subbotin",
+                    value="normal",
                     multiselect=False,
                     label="activation function",
                 )
             inclusion_boundary_width = gr.Slider(
-                minimum=0, maximum=1, value=0.2, label="activation function width"
+                minimum=0, maximum=1, value=0.95, label="activation function width"
             )
             horizontal_offset = gr.Slider(
                 minimum=-1, maximum=1, value=0, label="midpoint horizontal offset"
             )
-            relative_offset = gr.Slider(minimum=-1, maximum=0.99, value=0, label="midpoint slope")
+            relative_offset = gr.Slider(minimum=-1, maximum=0.99, value=0.2, label="midpoint slope")
             do_merge = gr.Button(value="MERGE", size="sm")
         # Here we'll show for each image what they contribute to the merged image
         with gr.Column():
